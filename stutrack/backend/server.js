@@ -16,6 +16,7 @@ import authRoutes from "./routes/authRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js"; // ✅ PHOTO UPLOAD
 
 // ================= INITIALIZE APP =================
 const app = express();
@@ -37,6 +38,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ================= STATIC FOLDER =================
+app.use("/uploads", express.static("uploads"));
+
 // ================= API ROUTES =================
 app.use("/api/admissions", admissionRoutes);
 app.use("/api/auth", authRoutes);
@@ -44,6 +48,9 @@ app.use("/api/leave", leaveRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/courses", courseRoutes);
+
+// ✅ PHOTO UPLOAD ROUTE
+app.use("/api/upload", uploadRoutes);
 
 // ================= TEST ROUTE =================
 app.get("/", (req, res) => {
@@ -61,22 +68,15 @@ app.use((req, res) => {
   });
 });
 
-// ================= GLOBAL ERROR HANDLER =================
+// ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err.stack || err.message);
+  console.error("❌ Server Error:", err.message);
 
   res.status(500).json({
     success: false,
     message: "Internal Server Error",
   });
 });
-
-// ================= ENV CHECK =================
-console.log("📧 EMAIL_USER:", process.env.EMAIL_USER || "Not Found ❌");
-console.log(
-  "🔐 EMAIL_PASS:",
-  process.env.EMAIL_PASS ? "Loaded ✅" : "Not Loaded ❌"
-);
 
 // ================= START SERVER =================
 app.listen(PORT, () => {

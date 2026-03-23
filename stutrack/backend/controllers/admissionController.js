@@ -125,3 +125,47 @@ export const deleteAdmission = async (req, res) => {
     });
   }
 };
+
+/* ================= UPDATE PHOTO (NEW 🔥) ================= */
+export const updateStudentPhoto = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    // file check
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded",
+      });
+    }
+
+    // image url
+    const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+
+    // update student
+    const student = await Admission.findOneAndUpdate(
+      { email },
+      { photo: imageUrl },
+      { new: true }
+    );
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Photo updated successfully",
+      data: student,
+    });
+  } catch (error) {
+    console.error("PHOTO ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};

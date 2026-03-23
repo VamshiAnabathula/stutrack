@@ -34,13 +34,35 @@ const admissionSchema = new mongoose.Schema(
       type: String,
     },
 
-    dob: { type: String },
-    marks: { type: String },
-    passingYear: { type: String },
-    fees: { type: String },
+    // ✅ PHOTO FIELD
+    photo: {
+      type: String,
+      default: "",
+    },
 
-    otp: { type: String },
-    otpExpiry: { type: Date },
+    dob: {
+      type: String,
+    },
+
+    marks: {
+      type: String,
+    },
+
+    passingYear: {
+      type: String,
+    },
+
+    fees: {
+      type: String,
+    },
+
+    otp: {
+      type: String,
+    },
+
+    otpExpiry: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
