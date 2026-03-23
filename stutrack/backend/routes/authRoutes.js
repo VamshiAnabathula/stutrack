@@ -44,12 +44,12 @@ router.post("/send-otp", async (req, res) => {
 
     await student.save();
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Login OTP",
-      html: `<h2>Your OTP: ${otp}</h2>`,
-    });
+   await transporter.sendMail({
+  from: `"StuTrack" <${process.env.EMAIL_USER}>`, // ✅ FIX
+  to: email,
+  subject: "Login OTP",
+  html: `<h2>Your OTP: ${otp}</h2>`,
+});
 
     res.json({ success: true });
 
@@ -94,15 +94,15 @@ router.post("/mobile-send-otp", async (req, res) => {
 
     await student.save();
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: student.email,
-      subject: "OTP for Login",
-      html: `
-        <h2>Your OTP: ${otp}</h2>
-        <p>Email: <b>${student.email}</b></p>
-      `,
-    });
+   await transporter.sendMail({
+  from: `"StuTrack" <${process.env.EMAIL_USER}>`, // ✅ FIX
+  to: student.email,
+  subject: "OTP for Login",
+  html: `
+    <h2>Your OTP: ${otp}</h2>
+    <p>Email: <b>${student.email}</b></p>
+  `,
+});
 
     res.json({
       success: true,
