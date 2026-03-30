@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
@@ -11,86 +11,37 @@ import Leave from "./Leave";
 import Results from "./Results";
 import StudentSidebar from "./StudentSidebar";
 
+/* ================= MAIN DASHBOARD ================= */
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [status, setStatus] = useState("OUT"); // ✅ default OUT
+  const [status, setStatus] = useState("OUT");
   const [studentName, setStudentName] = useState("Student");
   const [studentEmail, setStudentEmail] = useState("");
-  const [hasNewNotification, setHasNewNotification] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  /* ================= PROTECT ROUTE ================= */
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+    if (!token) return navigate("/login");
 
-    const studentData = localStorage.getItem("student");
+    const studentData = JSON.parse(localStorage.getItem("student"));
     if (studentData) {
-      const savedStudent = JSON.parse(studentData);
-      if (savedStudent?.name) setStudentName(savedStudent.name);
-      if (savedStudent?.email) setStudentEmail(savedStudent.email);
+      setStudentName(studentData.name);
+      setStudentEmail(studentData.email);
     }
 
-    // ❌ REMOVE OLD AUTO STATUS
-    localStorage.removeItem("attendanceStatus");
-
-    // ✅ ALWAYS START WITH OUT
-    setStatus("OUT");
-
+    setStatus(localStorage.getItem("attendanceStatus") || "OUT");
     setLoading(false);
   }, [navigate]);
 
-  /* ================= FETCH UNSEEN NOTIFICATIONS ================= */
-  useEffect(() => {
-    const fetchUnseen = async () => {
-      if (!studentEmail) return;
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/notifications/unseen/${studentEmail}`
-        );
-        setHasNewNotification(res.data.hasUnseen);
-      } catch (err) {
-        console.error("Error fetching unseen notifications:", err);
-        setHasNewNotification(false);
-      }
-    };
-
-    fetchUnseen();
-    const interval = setInterval(fetchUnseen, 20000);
-    return () => clearInterval(interval);
-  }, [studentEmail]);
-
-  /* ================= MARK NOTIFICATIONS AS SEEN ================= */
-  useEffect(() => {
-    const markSeen = async () => {
-      if (location.pathname.endsWith("/notifications") && hasNewNotification) {
-        try {
-          await axios.post(
-            `http://localhost:5000/api/notifications/mark-seen/${studentEmail}`
-          );
-          setHasNewNotification(false);
-        } catch (err) {
-          console.error("Error marking notifications as seen:", err);
-        }
-      }
-    };
-    markSeen();
-  }, [location.pathname, studentEmail, hasNewNotification]);
-
-  /* ================= RENDER CONTENT ================= */
   const renderContent = () => {
     if (location.pathname.endsWith("/attendance"))
-      return <Attendance email={studentEmail} name={studentName} />;
+      return <Attendance email={studentEmail} />;
     if (location.pathname.endsWith("/leave"))
       return <Leave email={studentEmail} />;
     if (location.pathname.endsWith("/reports")) return <Reports />;
-    if (location.pathname.endsWith("/results"))
-      return <Results />;
+    if (location.pathname.endsWith("/results")) return <Results />;
     if (location.pathname.endsWith("/notifications"))
       return <StudentNotifications email={studentEmail} />;
     if (location.pathname.endsWith("/profile"))
@@ -106,24 +57,59 @@ export default function StudentDashboard() {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
-        Loading...
-      </div>
-    );
-  }
+  if (loading) return <div className="p-10">Loading...</div>;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
+    <div className="flex h-screen bg-gray-100">
       <StudentSidebar studentEmail={studentEmail} />
-      <div className="flex-1 overflow-auto p-8">{renderContent()}</div>
+      <div className="flex-1 p-6 overflow-auto">{renderContent()}</div>
     </div>
   );
 }
 
 /* ================= DASHBOARD HOME ================= */
 function DashboardHome({ status, setStatus, studentName, studentEmail }) {
+  const [attendance, setAttendance] = useState([]);
+  const [student, setStudent] = useState(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    present: 0,
+    absent: 0,
+    percentage: 0,
+  });
+
+  const fetchData = useCallback(async () => {
+    try {
+      const attRes = await axios.get(
+        `http://localhost:5000/api/attendance/student/${studentEmail}`
+      );
+
+      const profileRes = await axios.get(
+        `http://localhost:5000/api/admissions/email/${studentEmail}`
+      );
+
+      const data = attRes.data;
+      setAttendance(data);
+
+      if (profileRes.data.success) {
+        setStudent(profileRes.data.data);
+      }
+
+      let total = data.length;
+      let present = data.filter((a) => a.checkIn && a.checkOut).length;
+      let absent = total - present;
+      let percentage = total ? ((present / total) * 100).toFixed(0) : 0;
+
+      setStats({ total, present, absent, percentage });
+    } catch (err) {
+      console.error(err);
+    }
+  }, [studentEmail]);
+
+  useEffect(() => {
+    if (studentEmail) fetchData();
+  }, [studentEmail, fetchData]);
+
   const handleAttendance = async () => {
     try {
       if (status === "OUT") {
@@ -131,105 +117,168 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
           email: studentEmail,
           fullName: studentName,
         });
-
-        alert("✅ Successfully Checked In");
         setStatus("IN");
         localStorage.setItem("attendanceStatus", "IN");
       } else {
         await axios.post("http://localhost:5000/api/attendance/checkout", {
           email: studentEmail,
         });
-
-        alert("✅ Successfully Checked Out");
         setStatus("OUT");
-        localStorage.removeItem("attendanceStatus");
+        localStorage.setItem("attendanceStatus", "OUT");
       }
-    } catch (error) {
-      console.error(error);
-      alert("❌ Attendance Error");
+      fetchData();
+    } catch {
+      alert("Error");
     }
   };
 
   return (
-    <>
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-8">
+    <div className="space-y-6">
+
+      {/* 🔥 UPDATED HEADER */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row justify-between items-center gap-6">
+
+        {/* LEFT SIDE */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            Welcome, {studentName} 👋
+          <h1 className="text-3xl font-bold">
+            Welcome, 
+            {student?.fullName || studentName}
           </h1>
+          <p className="text-sm opacity-90 mt-1">
+            {student?.course}
+          </p>
+
           <span
-            className={`inline-block mt-3 px-4 py-2 rounded-full text-sm font-semibold ${
-              status === "IN"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
+            className={`mt-4 inline-block px-4 py-1 rounded-full text-sm font-semibold ${
+              status === "IN" ? "bg-green-400" : "bg-red-400"
             }`}
           >
-            Current Status: {status}
+            {status === "IN" ? "Checked In" : "Checked Out"}
           </span>
         </div>
 
-        {/* BUTTON */}
-        <button
-          onClick={handleAttendance}
-          className={`text-white px-6 py-2 rounded-lg font-semibold shadow-md ${
-            status === "OUT"
-              ? "bg-green-500 hover:bg-green-600"
-              : "bg-red-500 hover:bg-red-600"
-          }`}
-        >
-          {status === "OUT" ? "Check In" : "Check Out"}
-        </button>
+        {/* RIGHT SIDE */}
+        <div className="flex items-center gap-6">
+
+          {/* BUTTON */}
+          <button
+            onClick={handleAttendance}
+            className={`px-6 py-2 rounded-full font-semibold shadow-lg transition hover:scale-105 ${
+              status === "OUT"
+                ? "bg-green-500 hover:bg-green-600"
+                : "bg-red-500 hover:bg-red-600"
+            }`}
+          >
+            {status === "OUT" ? "Check In" : "Check Out"}
+          </button>
+
+          {/* BIG PROFILE */}
+          <div className="w-16 h-16 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white text-blue-600 flex items-center justify-center text-xl font-bold">
+            {student?.photo ? (
+              <img
+                src={student.photo}
+                alt="profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              (studentName?.charAt(0) || "S").toUpperCase()
+            )}
+          </div>
+        </div>
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title="Total Days" value="24" color="text-blue-600" />
-        <StatCard title="Present" value="20" color="text-green-600" />
-        <StatCard title="Absent" value="4" color="text-red-600" />
-        <StatCard title="Attendance %" value="83%" color="text-purple-600" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard title="Total Days" value={stats.total} color="blue" />
+        <StatCard title="Present" value={stats.present} color="green" />
+        <StatCard title="Absent" value={stats.absent} color="red" />
+        <StatCard title="Attendance %" value={stats.percentage + "%"} color="purple" />
       </div>
 
       {/* TABLE */}
-      <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <h2 className="text-xl font-semibold mb-4">Recent Attendance</h2>
+      <div className="bg-white rounded-2xl shadow overflow-hidden">
+        <div className="p-4 border-b font-bold text-lg">
+          Recent Attendance
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left border border-gray-200 rounded-xl overflow-hidden">
-            <thead className="bg-gray-100">
+          <table className="w-full text-sm text-center">
+            <thead className="bg-blue-100 text-blue-800">
               <tr>
-                <th className="p-3 text-gray-600">Date</th>
-                <th className="p-3 text-gray-600">Check In</th>
-                <th className="p-3 text-gray-600">Check Out</th>
-                <th className="p-3 text-gray-600">Status</th>
+                <th className="p-3">Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Hours</th>
+                <th>Status</th>
               </tr>
             </thead>
+
             <tbody>
-              <tr className="border-t hover:bg-gray-50">
-                <td className="p-3">10 Feb 2026</td>
-                <td className="p-3">09:02 AM</td>
-                <td className="p-3">04:10 PM</td>
-                <td className="p-3 text-green-600 font-semibold">Present</td>
-              </tr>
-              <tr className="border-t hover:bg-gray-50">
-                <td className="p-3">09 Feb 2026</td>
-                <td className="p-3">--</td>
-                <td className="p-3">--</td>
-                <td className="p-3 text-red-600 font-semibold">Absent</td>
-              </tr>
+              {attendance.slice(0, 7).map((a, i) => {
+                const present = a.checkIn && a.checkOut;
+                return (
+                  <tr key={i} className="border-t hover:bg-blue-50 transition">
+                    <td className="p-3">
+                      {new Date(a.date).toLocaleDateString()}
+                    </td>
+                    <td>
+                      {a.checkIn
+                        ? new Date(a.checkIn).toLocaleTimeString()
+                        : "--"}
+                    </td>
+                    <td>
+                      {a.checkOut
+                        ? new Date(a.checkOut).toLocaleTimeString()
+                        : "--"}
+                    </td>
+                    <td className="font-semibold text-green-600">
+                      {calculateHours(a.checkIn, a.checkOut)}
+                    </td>
+                    <td>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          present
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {present ? "Present" : "Absent"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
-/* ================= STAT CARD ================= */
+/* ================= HOURS ================= */
+function calculateHours(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return "--";
+  const diff =
+    (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60);
+  return diff.toFixed(2) + "h";
+}
+
+/* ================= CARD ================= */
 function StatCard({ title, value, color }) {
+  const colors = {
+    blue: "from-blue-500 to-blue-700",
+    green: "from-green-500 to-green-700",
+    red: "from-red-500 to-red-700",
+    purple: "from-purple-500 to-purple-700",
+  };
+
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl">
-      <h3 className="text-gray-500 text-sm">{title}</h3>
-      <p className={`text-3xl font-bold mt-2 ${color}`}>{value}</p>
+    <div
+      className={`bg-gradient-to-r ${colors[color]} text-white p-5 rounded-2xl shadow-md hover:scale-105 transition`}
+    >
+      <p className="text-sm opacity-80">{title}</p>
+      <h2 className="text-2xl font-bold mt-1">{value}</h2>
     </div>
   );
 }
