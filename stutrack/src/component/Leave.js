@@ -54,7 +54,6 @@ export default function Leave({ email }) {
 
       setLeaveList(myLeaves);
 
-      // 🔥 SET NAME FROM DB (NO EXTRA API)
       if (myLeaves.length > 0) {
         setStudentName(myLeaves[0].fullName);
       } else {
@@ -110,7 +109,6 @@ export default function Leave({ email }) {
 
       setLeaveList([res.data, ...leaveList]);
 
-      // 🔥 Update name instantly after first leave
       if (!studentName) {
         setStudentName(res.data.fullName);
       }
@@ -135,7 +133,7 @@ export default function Leave({ email }) {
 
       <div className="max-w-5xl mx-auto">
 
-        {/* 🔥 HEADER */}
+        {/* HEADER */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg mb-6">
 
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -289,11 +287,27 @@ export default function Leave({ email }) {
                           Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
                         return (
-                          <tr key={leave._id} className="border-b">
+                          <tr key={leave._id} className="border-b hover:bg-gray-50">
                             <td className="p-3">{start.toLocaleDateString()}</td>
                             <td className="p-3">{end.toLocaleDateString()}</td>
                             <td className="p-3">{leave.reason}</td>
-                            <td className="p-3 text-center">{leave.status}</td>
+
+                            {/* 🔥 STATUS COLOR */}
+                            <td className="p-3 text-center">
+                              <span
+                                className={`px-3 py-1 rounded-full text-white text-xs font-semibold
+                                  ${
+                                    leave.status === "Approved"
+                                      ? "bg-green-500"
+                                      : leave.status === "Rejected"
+                                      ? "bg-red-500"
+                                      : "bg-yellow-500"
+                                  }`}
+                              >
+                                {leave.status}
+                              </span>
+                            </td>
+
                             <td className="p-3 text-center">{total} Days</td>
                           </tr>
                         );

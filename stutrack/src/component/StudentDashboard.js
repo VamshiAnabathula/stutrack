@@ -1,4 +1,3 @@
-// src/component/StudentDashboard.js
 "use client";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -16,7 +15,7 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [status, setStatus] = useState("OUT");
+  const [status, setStatus] = useState("OUT"); // ✅ default OUT
   const [studentName, setStudentName] = useState("Student");
   const [studentEmail, setStudentEmail] = useState("");
   const [hasNewNotification, setHasNewNotification] = useState(false);
@@ -37,8 +36,11 @@ export default function StudentDashboard() {
       if (savedStudent?.email) setStudentEmail(savedStudent.email);
     }
 
-    const savedStatus = localStorage.getItem("attendanceStatus");
-    if (savedStatus) setStatus(savedStatus);
+    // ❌ REMOVE OLD AUTO STATUS
+    localStorage.removeItem("attendanceStatus");
+
+    // ✅ ALWAYS START WITH OUT
+    setStatus("OUT");
 
     setLoading(false);
   }, [navigate]);
@@ -80,7 +82,7 @@ export default function StudentDashboard() {
     markSeen();
   }, [location.pathname, studentEmail, hasNewNotification]);
 
-  /* ================= RENDER CONTENT BASED ON URL ================= */
+  /* ================= RENDER CONTENT ================= */
   const renderContent = () => {
     if (location.pathname.endsWith("/attendance"))
       return <Attendance email={studentEmail} name={studentName} />;
@@ -92,9 +94,8 @@ export default function StudentDashboard() {
     if (location.pathname.endsWith("/notifications"))
       return <StudentNotifications email={studentEmail} />;
     if (location.pathname.endsWith("/profile"))
-      return <Profile studentEmail={studentEmail} />; // pass email prop
+      return <Profile studentEmail={studentEmail} />;
 
-    // Default dashboard home
     return (
       <DashboardHome
         status={status}
@@ -123,8 +124,6 @@ export default function StudentDashboard() {
 
 /* ================= DASHBOARD HOME ================= */
 function DashboardHome({ status, setStatus, studentName, studentEmail }) {
-  const navigate = useNavigate();
-
   const handleAttendance = async () => {
     try {
       if (status === "OUT") {
@@ -132,6 +131,7 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
           email: studentEmail,
           fullName: studentName,
         });
+
         alert("✅ Successfully Checked In");
         setStatus("IN");
         localStorage.setItem("attendanceStatus", "IN");
@@ -139,6 +139,7 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
         await axios.post("http://localhost:5000/api/attendance/checkout", {
           email: studentEmail,
         });
+
         alert("✅ Successfully Checked Out");
         setStatus("OUT");
         localStorage.removeItem("attendanceStatus");
@@ -158,7 +159,7 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
             Welcome, {studentName} 👋
           </h1>
           <span
-            className={`inline-block mt-3 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300 ${
+            className={`inline-block mt-3 px-4 py-2 rounded-full text-sm font-semibold ${
               status === "IN"
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
@@ -168,10 +169,10 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
           </span>
         </div>
 
-        {/* ATTENDANCE BUTTON */}
+        {/* BUTTON */}
         <button
           onClick={handleAttendance}
-          className={`text-white px-6 py-2 rounded-lg font-semibold shadow-md transition-all duration-300 hover:scale-105 ${
+          className={`text-white px-6 py-2 rounded-lg font-semibold shadow-md ${
             status === "OUT"
               ? "bg-green-500 hover:bg-green-600"
               : "bg-red-500 hover:bg-red-600"
@@ -181,7 +182,7 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
         </button>
       </div>
 
-      {/* STATS CARDS */}
+      {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard title="Total Days" value="24" color="text-blue-600" />
         <StatCard title="Present" value="20" color="text-green-600" />
@@ -189,27 +190,27 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
         <StatCard title="Attendance %" value="83%" color="text-purple-600" />
       </div>
 
-      {/* RECENT ATTENDANCE TABLE */}
+      {/* TABLE */}
       <div className="bg-white p-6 rounded-2xl shadow-lg">
         <h2 className="text-xl font-semibold mb-4">Recent Attendance</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border border-gray-200 rounded-xl overflow-hidden">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-3 font-medium text-gray-600">Date</th>
-                <th className="p-3 font-medium text-gray-600">Check In</th>
-                <th className="p-3 font-medium text-gray-600">Check Out</th>
-                <th className="p-3 font-medium text-gray-600">Status</th>
+                <th className="p-3 text-gray-600">Date</th>
+                <th className="p-3 text-gray-600">Check In</th>
+                <th className="p-3 text-gray-600">Check Out</th>
+                <th className="p-3 text-gray-600">Status</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t hover:bg-gray-50 transition-colors">
+              <tr className="border-t hover:bg-gray-50">
                 <td className="p-3">10 Feb 2026</td>
                 <td className="p-3">09:02 AM</td>
                 <td className="p-3">04:10 PM</td>
                 <td className="p-3 text-green-600 font-semibold">Present</td>
               </tr>
-              <tr className="border-t hover:bg-gray-50 transition-colors">
+              <tr className="border-t hover:bg-gray-50">
                 <td className="p-3">09 Feb 2026</td>
                 <td className="p-3">--</td>
                 <td className="p-3">--</td>
@@ -226,7 +227,7 @@ function DashboardHome({ status, setStatus, studentName, studentEmail }) {
 /* ================= STAT CARD ================= */
 function StatCard({ title, value, color }) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300">
+    <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl">
       <h3 className="text-gray-500 text-sm">{title}</h3>
       <p className={`text-3xl font-bold mt-2 ${color}`}>{value}</p>
     </div>
