@@ -6,7 +6,7 @@ const LeaveApprovals = () => {
   const [leaves, setLeaves] = useState([]);
   const [selectedLeave, setSelectedLeave] = useState(null);
 
-  // Filters
+  // ✅ Default All (smart logic apply later)
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [fromFilter, setFromFilter] = useState("");
@@ -25,6 +25,19 @@ const LeaveApprovals = () => {
   useEffect(() => {
     fetchLeaves();
   }, []);
+
+  // 🔥 SMART FILTER AUTO APPLY
+  useEffect(() => {
+    if (leaves.length > 0) {
+      const hasPending = leaves.some(l => l.status === "Pending");
+
+      if (hasPending) {
+        setStatusFilter("Pending");
+      } else {
+        setStatusFilter("All");
+      }
+    }
+  }, [leaves]);
 
   // Update Status
   const updateStatus = async (id, status) => {
@@ -112,12 +125,15 @@ const LeaveApprovals = () => {
           className="border px-3 py-2 rounded-lg"
         />
 
+        {/* 🔥 SMART RESET */}
         <button
           onClick={() => {
             setSearch("");
-            setStatusFilter("All");
             setFromFilter("");
             setToFilter("");
+
+            const hasPending = leaves.some(l => l.status === "Pending");
+            setStatusFilter(hasPending ? "Pending" : "All");
           }}
           className="bg-gray-200 px-4 py-2 rounded-lg"
         >
@@ -234,103 +250,53 @@ const LeaveApprovals = () => {
         </table>
       </div>
 
-      {/* 🔥 PREMIUM MODAL */}
+      {/* MODAL */}
       {selectedLeave && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
 
-          <div className="bg-white rounded-2xl shadow-2xl w-[420px] p-6 relative animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-[420px] p-6 relative">
 
-            {/* Close */}
             <button
               onClick={() => setSelectedLeave(null)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-red-500 text-lg"
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
             >
               ✖
             </button>
 
-            <h2 className="text-2xl font-bold text-center mb-5 text-gray-800">
+            <h2 className="text-2xl font-bold text-center mb-5">
               Leave Details
             </h2>
 
             <div className="space-y-3 text-sm">
 
               <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500">Name</span>
-                <span className="font-semibold text-gray-800">
-                  {selectedLeave.fullName || selectedLeave.name || "N/A"}
-                </span>
+                <span>Name</span>
+                <span>{selectedLeave.fullName || selectedLeave.name}</span>
               </div>
 
               <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500">Email</span>
-                <span className="text-gray-700">
-                  {selectedLeave.email}
-                </span>
+                <span>Email</span>
+                <span>{selectedLeave.email}</span>
               </div>
 
               <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500">From</span>
-                <span>
-                  {selectedLeave.fromDate?.split("T")[0]}
-                </span>
+                <span>From</span>
+                <span>{selectedLeave.fromDate?.split("T")[0]}</span>
               </div>
 
               <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500">To</span>
-                <span>
-                  {selectedLeave.toDate?.split("T")[0]}
-                </span>
+                <span>To</span>
+                <span>{selectedLeave.toDate?.split("T")[0]}</span>
               </div>
 
-              <div className="border-b pb-2">
-                <span className="text-gray-500 block mb-1">Reason</span>
-                <div className="bg-gray-100 p-2 rounded-lg">
+              <div>
+                <span>Reason</span>
+                <div className="bg-gray-100 p-2 rounded">
                   {selectedLeave.reason}
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-gray-500">Status</span>
-
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold
-                  ${
-                    selectedLeave.status === "Approved"
-                      ? "bg-green-100 text-green-700"
-                      : selectedLeave.status === "Rejected"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
-                >
-                  {selectedLeave.status}
-                </span>
-              </div>
-
             </div>
-
-            {selectedLeave.status === "Pending" && (
-              <div className="flex gap-3 mt-5">
-
-                <button
-                  onClick={() =>
-                    updateStatus(selectedLeave._id, "Approved")
-                  }
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg"
-                >
-                  Approve
-                </button>
-
-                <button
-                  onClick={() =>
-                    updateStatus(selectedLeave._id, "Rejected")
-                  }
-                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
-                >
-                  Reject
-                </button>
-
-              </div>
-            )}
 
           </div>
         </div>
