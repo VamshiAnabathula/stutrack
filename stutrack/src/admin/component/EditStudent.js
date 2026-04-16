@@ -17,7 +17,13 @@ export default function EditStudent() {
     duration: "",
     reference: "",
     profileImage: "",
-    bloodGroup: "", // ✅ ADDED
+    bloodGroup: "",
+  });
+
+  const [fees, setFees] = useState({
+    totalFees: 0,
+    paidFees: 0,
+    remainingFees: 0,
   });
 
   const [loading, setLoading] = useState(true);
@@ -26,9 +32,47 @@ export default function EditStudent() {
   useEffect(() => {
     const fetchStudent = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/admissions/${id}`);
+        const res = await axios.get(
+          `http://localhost:5000/api/admissions/${id}`
+        );
+
         if (res.data.success) {
-          setFormData(res.data.data);
+          const data = res.data.data;
+
+          setFormData({
+            fullName: data.fullName || "",
+            email: data.email || "",
+            mobile: data.mobile || "",
+            dob: data.dob || "",
+            address: data.address || "",
+            pincode: data.pincode || "",
+            course: data.course || "",
+            duration: data.duration || "",
+            reference: data.reference || "",
+            profileImage: data.profileImage || "",
+            bloodGroup: data.bloodGroup || "",
+          });
+
+          // FETCH FEES FROM SEPARATE COLLECTION
+          try {
+            const feeRes = await axios.get(
+              `http://localhost:5000/api/fees/${id}`
+            );
+
+            const feeData = feeRes.data.fees;
+
+            setFees({
+              totalFees: feeData.totalFees || 0,
+              paidFees: feeData.paidFees || 0,
+              remainingFees: feeData.remainingFees || 0,
+            });
+          } catch (err) {
+            setFees({
+              totalFees: 0,
+              paidFees: 0,
+              remainingFees: 0,
+            });
+          }
         } else {
           alert("Student not found");
           navigate("/admindashboard/students");
@@ -40,12 +84,32 @@ export default function EditStudent() {
         setLoading(false);
       }
     };
+
     fetchStudent();
   }, [id, navigate]);
 
   /* ================= HANDLE CHANGE ================= */
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "paidFees") {
+      const paid = Number(value || 0);
+      const total = Number(fees.totalFees || 0);
+
+      let remaining = total - paid;
+      if (remaining < 0) remaining = 0;
+
+      setFees({
+        ...fees,
+        paidFees: paid,
+        remainingFees: remaining,
+      });
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   /* ================= HANDLE SUBMIT ================= */
@@ -58,7 +122,18 @@ export default function EditStudent() {
     }
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/admissions/${id}`, formData);
+      // UPDATE STUDENT
+      const res = await axios.put(
+        `http://localhost:5000/api/admissions/${id}`,
+        formData
+      );
+
+      // UPDATE FEES SEPARATELY
+      await axios.put(`http://localhost:5000/api/fees/${id}`, {
+        totalFees: fees.totalFees,
+        paidFees: fees.paidFees,
+      });
+
       if (res.data.success) {
         alert("Student details updated successfully ✅");
         navigate("/admindashboard/students");
@@ -82,13 +157,15 @@ export default function EditStudent() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex items-start justify-center">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg overflow-hidden mt-2 sm:mt-4 border border-gray-100">
-        
+
         {/* HEADER SECTION */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 sm:p-6 text-white relative">
           <div className="absolute inset-0 bg-black opacity-10"></div>
           <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Edit Student Profile</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Edit Student Profile
+              </h2>
               <p className="mt-1 text-indigo-100 text-sm font-medium">
                 Update details for {formData.fullName}
               </p>
@@ -97,8 +174,8 @@ export default function EditStudent() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 sm:p-8">
-          
-          {/* ================= PERSONAL ================= */}
+
+          {/* PERSONAL */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-3">
               <span className="w-1.5 h-5 bg-blue-500 rounded-full inline-block"></span>
@@ -106,116 +183,73 @@ export default function EditStudent() {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              
-              {/* FULL NAME */}
+
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <span className="text-gray-400 text-sm">👤</span>
-                  </div>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    required
-                    className="w-full pl-8 border border-gray-300 p-2.5 rounded-lg bg-white text-gray-800 text-sm font-medium placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm"
-                  />
-                </div>
+                <label className="text-xs font-bold text-gray-700">Full Name</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg"
+                />
               </div>
 
-              {/* MOBILE */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700">
-                  Mobile Number (10 Digits)
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <span className="text-gray-400 text-sm">📞</span>
-                  </div>
-                  <input
-                    type="tel"
-                    name="mobile"
-                    pattern="[0-9]{10}"
-                    title="Mobile number must be exactly 10 digits"
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    required
-                    className="w-full pl-8 border border-gray-300 p-2.5 rounded-lg bg-white text-gray-800 text-sm font-medium placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm"
-                  />
-                </div>
+                <label className="text-xs font-bold text-gray-700">Mobile Number</label>
+                <input
+                  type="tel"
+                  name="mobile"
+                  value={formData.mobile}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg"
+                />
               </div>
 
-              {/* ✅ BLOOD GROUP */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700">
-                  Blood Group
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <span className="text-gray-400 text-sm">🩸</span>
-                  </div>
-                  <select
-                    name="bloodGroup"
-                    value={formData.bloodGroup}
-                    onChange={handleChange}
-                    required
-                    className="w-full pl-8 border border-gray-300 p-2.5 rounded-lg bg-white text-gray-800 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm appearance-none"
-                  >
-                    <option value="" disabled>Select Blood Group</option>
-                    <option>A+</option>
-                    <option>A-</option>
-                    <option>B+</option>
-                    <option>B-</option>
-                    <option>AB+</option>
-                    <option>AB-</option>
-                    <option>O+</option>
-                    <option>O-</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 text-xs">
-                    ▼
-                  </div>
-                </div>
+                <label className="text-xs font-bold text-gray-700">Blood Group</label>
+                <select
+                  name="bloodGroup"
+                  value={formData.bloodGroup}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg"
+                >
+                  <option value="">Select Blood Group</option>
+                  <option>A+</option>
+                  <option>A-</option>
+                  <option>B+</option>
+                  <option>B-</option>
+                  <option>AB+</option>
+                  <option>AB-</option>
+                  <option>O+</option>
+                  <option>O-</option>
+                </select>
               </div>
 
-              {/* DOB */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Date of Birth
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
-                    Locked
-                  </span>
-                </label>
+                <label className="text-xs font-bold text-gray-700">Date of Birth</label>
                 <input
                   type="date"
                   value={formData.dob}
                   disabled
-                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
                 />
               </div>
 
-              {/* EMAIL */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Email Address
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
-                    Locked
-                  </span>
-                </label>
+                <label className="text-xs font-bold text-gray-700">Email Address</label>
                 <input
                   type="email"
                   value={formData.email}
                   disabled
-                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
                 />
               </div>
+
             </div>
           </div>
 
-          {/* ================= ACADEMIC ================= */}
+          {/* ACADEMIC + FEES */}
           <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-3">
               <span className="w-1.5 h-5 bg-indigo-500 rounded-full inline-block"></span>
@@ -223,36 +257,55 @@ export default function EditStudent() {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              
-              {/* COURSE */}
+
+              <input
+                type="text"
+                value={formData.course}
+                disabled
+                className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
+              />
+
+              <input
+                type="text"
+                value={formData.duration}
+                disabled
+                className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
+              />
+
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Course Enrolled
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
-                    Locked
-                  </span>
+                <label className="text-xs font-bold text-gray-700">
+                  Total Fees (₹)
                 </label>
                 <input
-                  type="text"
-                  value={formData.course}
+                  type="number"
+                  value={fees.totalFees}
                   disabled
-                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
                 />
               </div>
 
-              {/* DURATION */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Course Duration
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
-                    Locked
-                  </span>
+                <label className="text-xs font-bold text-gray-700">
+                  Fees Paid (₹)
                 </label>
                 <input
-                  type="text"
-                  value={formData.duration}
-                  disabled
-                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                  type="number"
+                  name="paidFees"
+                  value={fees.paidFees}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-700">
+                  Remaining Fees (₹)
+                </label>
+                <input
+                  type="number"
+                  value={fees.remainingFees}
+                  readOnly
+                  className="w-full border border-gray-300 p-2.5 rounded-lg bg-gray-100"
                 />
               </div>
 
@@ -260,18 +313,18 @@ export default function EditStudent() {
           </div>
 
           {/* BUTTONS */}
-          <div className="mt-8 pt-5 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3">
+          <div className="mt-8 pt-5 border-t flex justify-end gap-3">
             <button
               type="button"
               onClick={() => navigate("/admindashboard/students")}
-              className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg"
+              className="px-6 py-2.5 bg-gray-100 rounded-lg"
             >
               Cancel Edit
             </button>
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold rounded-lg shadow-md"
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg"
             >
               Save Changes
             </button>

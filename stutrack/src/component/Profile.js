@@ -9,19 +9,32 @@ import {
   Clock,
   CalendarDays,
   Camera,
-  Droplet, // ✅ NEW ICON
+  Droplet,
+  IndianRupee,
 } from "lucide-react";
 
-export default function Profile({ studentEmail }) {
+export default function Profile() {
+  const [studentEmail, setStudentEmail] = useState("");
   const [student, setStudent] = useState(null);
+  const [fees, setFees] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    const email = localStorage.getItem("studentEmail");
+    if (email) {
+      setStudentEmail(email);
+    } else {
+      setError("Please login again");
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!studentEmail) return;
 
-    const fetchStudent = async () => {
+    const fetchData = async () => {
       try {
         const res = await axios.get(
           `http://localhost:5000/api/admissions/email/${studentEmail}`
@@ -29,23 +42,36 @@ export default function Profile({ studentEmail }) {
 
         if (res.data.success) {
           setStudent(res.data.data);
+
+          try {
+            const feesRes = await axios.get(
+              `http://localhost:5000/api/fees/${res.data.data._id}`
+            );
+
+            if (feesRes.data.success) {
+              setFees(feesRes.data.fees);
+            } else {
+              setFees({ totalFees: 0, paidFees: 0, remainingFees: 0 });
+            }
+          } catch (err) {
+            setFees({ totalFees: 0, paidFees: 0, remainingFees: 0 });
+          }
         } else {
           setError("Student not found");
         }
       } catch (err) {
-        setError("Error fetching student data");
+        setError("Error fetching data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStudent();
+    fetchData();
   }, [studentEmail]);
 
-  // IMAGE UPLOAD
   const handleUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file || !student) return;
 
     const formData = new FormData();
     formData.append("photo", file);
@@ -60,10 +86,9 @@ export default function Profile({ studentEmail }) {
 
       if (res.data.success) {
         setStudent(res.data.data);
-        alert("✅ Photo uploaded successfully!");
+        alert("Photo uploaded successfully!");
       }
     } catch (err) {
-      console.log(err);
       alert("Upload failed");
     } finally {
       setUploading(false);
@@ -80,7 +105,7 @@ export default function Profile({ studentEmail }) {
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-50 text-red-500 text-lg font-medium">
+      <div className="flex justify-center items-center h-screen text-red-500 text-lg font-medium">
         {error}
       </div>
     );
@@ -88,91 +113,74 @@ export default function Profile({ studentEmail }) {
 
   if (!student) return null;
 
-  const joiningDate = new Date(student.createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  const joiningDate = new Date(student.createdAt).toLocaleDateString(
+    "en-US",
+    { year: "numeric", month: "short", day: "numeric" }
+  );
 
   return (
     <div className="h-screen overflow-hidden bg-gray-50 px-4 sm:px-6 lg:px-8 flex justify-center items-center">
 
-      {/* MAIN CARD */}
-      <div className="w-full max-w-5xl h-[95vh] bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
+      <div className="w-full max-w-5xl h-[95vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
 
         {/* HEADER */}
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 sm:px-10 py-6 sm:py-7 flex flex-col sm:flex-row items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-6 flex items-center justify-between text-white">
 
-          <div className="flex flex-col sm:flex-row items-center gap-5 w-full">
+          <div className="flex items-center gap-5">
 
-            {/* AVATAR */}
-            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-white p-2 shadow-xl shrink-0 relative">
+            <div className="h-24 w-24 rounded-full bg-white p-2 relative">
+              {student.photo ? (
+                <img src={student.photo} className="h-full w-full object-cover rounded-full" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center font-bold text-indigo-700">
+                  {student.fullName?.charAt(0)}
+                </div>
+              )}
 
-              <div className="h-full w-full rounded-full overflow-hidden">
-                {student.photo ? (
-                  <img
-                    src={student.photo}
-                    alt="profile"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-3xl text-indigo-700 font-extrabold">
-                    {student.fullName?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-
-              {/* CAMERA */}
-              <label className="absolute bottom-1 right-1 bg-black text-white p-2 rounded-full cursor-pointer hover:bg-gray-800">
+              <label className="absolute bottom-1 right-1 bg-black p-2 rounded-full cursor-pointer">
                 <Camera size={14} />
                 <input type="file" hidden onChange={handleUpload} />
               </label>
             </div>
 
-            {/* NAME */}
-            <div className="text-center sm:text-left flex-1 flex flex-col sm:flex-row sm:items-center justify-between w-full">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                  {student.fullName}
-                </h2>
-
-                <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 text-indigo-100 text-sm">
-                  <Mail className="w-4 h-4" />
-                  <span className="break-all">{student.email}</span>
-                </div>
-              </div>
-
-              {/* BADGE */}
-              <div className="mt-3 sm:mt-0">
-                <span className="bg-green-500 text-white text-xs font-bold px-4 py-2 rounded-full flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>
-                  Active
-                </span>
+            <div>
+              <h2 className="text-2xl font-bold">{student.fullName}</h2>
+              <div className="flex items-center gap-2 text-sm">
+                <Mail size={14} />
+                {student.email}
               </div>
             </div>
+
           </div>
+
+          <span className="bg-green-500 px-4 py-1 rounded-full text-xs font-bold">
+            Active
+          </span>
         </div>
 
-        {/* DETAILS */}
-        <div className="px-6 sm:px-10 py-6 bg-gray-50/60 flex-1 overflow-hidden">
-
-          <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-3">
-            <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-            Personal Information
-          </h3>
+        {/* CONTENT */}
+        <div className="px-6 py-6 bg-gray-50 flex-1 overflow-auto">
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-            <ProfileItem icon={<Phone />} label="Mobile Number" value={student.mobile} />
-            <ProfileItem icon={<Calendar />} label="Date of Birth" value={student.dob} />
-            <ProfileItem icon={<BookOpen />} label="Course Enrolled" value={student.course} />
-            <ProfileItem icon={<Clock />} label="Course Duration" value={student.duration} />
+            <ProfileItem icon={<Phone />} label="Mobile" value={student.mobile} />
+            <ProfileItem icon={<Calendar />} label="DOB" value={student.dob} />
+            <ProfileItem icon={<BookOpen />} label="Course" value={student.course} />
+            <ProfileItem icon={<Clock />} label="Duration" value={student.duration} />
             <ProfileItem icon={<CalendarDays />} label="Joining Date" value={joiningDate} />
-
-            {/* ✅ NEW BLOOD GROUP */}
             <ProfileItem icon={<Droplet />} label="Blood Group" value={student.bloodGroup} />
 
           </div>
+
+          {/* ================= FEES SECTION (DISABLED INPUT STYLE) ================= */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            <DisabledInput label="Total Fees" value={fees?.totalFees ?? 0} />
+            <DisabledInput label="Paid Fees" value={fees?.paidFees ?? 0} />
+            <DisabledInput label="Remaining Fees" value={fees?.remainingFees ?? 0} />
+
+          </div>
+
         </div>
 
         {uploading && (
@@ -185,23 +193,29 @@ export default function Profile({ studentEmail }) {
   );
 }
 
-// CARD
+/* ================= PROFILE CARD ================= */
 function ProfileItem({ icon, label, value }) {
   return (
-    <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-4 flex items-center gap-4">
-
-      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-        {icon}
+    <div className="bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
+      <div className="text-indigo-600">{icon}</div>
+      <div>
+        <p className="text-xs text-gray-400 uppercase">{label}</p>
+        <p className="text-sm font-bold text-gray-800">{value || "-"}</p>
       </div>
+    </div>
+  );
+}
 
-      <div className="min-w-0">
-        <p className="text-xs font-semibold text-gray-400 uppercase mb-1">
-          {label}
-        </p>
-        <p className="text-sm font-bold text-gray-800 truncate">
-          {value || "-"}
-        </p>
-      </div>
+/* ================= DISABLED INPUT STYLE ================= */
+function DisabledInput({ label, value }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-bold text-gray-600">{label}</label>
+      <input
+        value={value}
+        disabled
+        className="border bg-gray-100 p-2 rounded-lg font-bold text-gray-700"
+      />
     </div>
   );
 }

@@ -17,6 +17,8 @@ const courseSchema = new mongoose.Schema(
     fees: {
       type: Number,
       required: true,
+      default: 0,
+      min: 0, // ❌ no negative fees allowed
     },
   },
   {

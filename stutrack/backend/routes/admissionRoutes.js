@@ -10,6 +10,9 @@ import {
 
 const router = express.Router();
 
+/* ================= CREATE ================= */
+router.post("/", createAdmission);
+
 /* ================= GET ALL ================= */
 router.get("/", getAdmissions);
 
@@ -18,9 +21,6 @@ router.get("/email/:email", getAdmissionByEmail);
 
 /* ================= GET BY ID ================= */
 router.get("/:id", getAdmissionById);
-
-/* ================= CREATE ================= */
-router.post("/", createAdmission);
 
 /* ================= UPDATE ================= */
 router.put("/:id", updateAdmission);

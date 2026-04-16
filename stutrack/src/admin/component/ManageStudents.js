@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function ManageStudents() {
   const navigate = useNavigate();
 
   const [students, setStudents] = useState([]);
+  const [feesMap, setFeesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -13,13 +15,31 @@ export default function ManageStudents() {
 
   /* ================= FETCH STUDENTS ================= */
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/admissions");
-        const result = await res.json();
+        const res = await axios.get("http://localhost:5000/api/admissions");
 
-        if (result.success) {
-          setStudents(result.data);
+        if (res.data.success) {
+          const studentList = res.data.data;
+          setStudents(studentList);
+
+          // FETCH FEES FOR EACH STUDENT
+          const feesResponses = await Promise.all(
+            studentList.map((s) =>
+              axios
+                .get(`http://localhost:5000/api/fees/${s._id}`)
+                .catch(() => null)
+            )
+          );
+
+          const map = {};
+          feesResponses.forEach((r, index) => {
+            if (r?.data?.fees) {
+              map[studentList[index]._id] = r.data.fees;
+            }
+          });
+
+          setFeesMap(map);
         } else {
           setStudents([]);
         }
@@ -31,7 +51,7 @@ export default function ManageStudents() {
       }
     };
 
-    fetchStudents();
+    fetchData();
   }, []);
 
   /* ================= SEARCH FILTER ================= */
@@ -58,12 +78,16 @@ export default function ManageStudents() {
 
   /* ================= DELETE ================= */
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this student?")) return;
+    if (!window.confirm("Are you sure you want to delete this student?"))
+      return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/admissions/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/admissions/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       const result = await res.json();
 
@@ -77,6 +101,15 @@ export default function ManageStudents() {
       console.error(error);
       alert("Server error ❌");
     }
+  };
+
+  /* ================= FEES HELPERS ================= */
+  const getFees = (id) => {
+    return feesMap[id] || {
+      totalFees: 0,
+      paidFees: 0,
+      remainingFees: 0,
+    };
   };
 
   return (
@@ -111,7 +144,7 @@ export default function ManageStudents() {
           />
         </div>
 
-        {/* TABLE WRAPPER */}
+        {/* TABLE */}
         <div className="overflow-x-auto w-full bg-white rounded-lg border border-gray-200 shadow-sm">
           {loading ? (
             <p className="text-center py-10 text-gray-500">Loading...</p>
@@ -123,57 +156,83 @@ export default function ManageStudents() {
             <table className="w-full border-collapse whitespace-nowrap min-w-max">
               <thead className="bg-blue-600 text-white text-sm sm:text-base">
                 <tr>
-                  <th className="p-3 text-left font-semibold">#</th>
-                  <th className="p-3 text-left font-semibold">Full Name</th>
-                  <th className="p-3 text-left font-semibold">Email</th>
-                  <th className="p-3 text-left font-semibold">Mobile</th>
-                  <th className="p-3 text-left font-semibold">Course</th>
-                  <th className="p-3 text-left font-semibold">Duration</th>
-                  <th className="p-3 text-left font-semibold tracking-wide">Admission Time</th>
-                  <th className="p-3 text-center font-semibold tracking-wide">Actions</th>
+                  <th className="p-3 text-left">#</th>
+                  <th className="p-3 text-left">Full Name</th>
+                  <th className="p-3 text-left">Email</th>
+                  <th className="p-3 text-left">Course</th>
+
+                  <th className="p-3 text-left">Total</th>
+                  <th className="p-3 text-left">Pay</th>
+                  <th className="p-3 text-left">Pending</th>
+
+                  <th className="p-3 text-left">Admission Time</th>
+                  <th className="p-3 text-center">Actions</th>
                 </tr>
               </thead>
 
               <tbody>
-                {currentStudents.map((s, index) => (
-                  <tr
-                    key={s._id}
-                    className={`border-b ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } hover:bg-blue-50`}
-                  >
-                    <td className="p-3 text-sm">{indexOfFirst + index + 1}</td>
-                    <td className="p-3 text-sm font-medium text-gray-800">{s.fullName}</td>
-                    <td className="p-3 text-sm text-gray-600">{s.email}</td>
-                    <td className="p-3 text-sm text-gray-600">{s.mobile}</td>
-                    <td className="p-3 text-sm text-gray-600">{s.course}</td>
-                    <td className="p-3 text-sm text-gray-600">{s.duration}</td>
+                {currentStudents.map((s, index) => {
+                  const fees = getFees(s._id);
 
-                    <td className="p-3 text-sm text-gray-500">
-                      {s.createdAt
-                        ? new Date(s.createdAt).toLocaleString()
-                        : "N/A"}
-                    </td>
+                  return (
+                    <tr
+                      key={s._id}
+                      className={`border-b ${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-blue-50`}
+                    >
+                      <td className="p-3 text-sm">
+                        {indexOfFirst + index + 1}
+                      </td>
 
-                    <td className="p-3 flex justify-center gap-2">
-                       <button
-                        onClick={() =>
-                          navigate(`/admindashboard/editstudent/${s._id}`)
-                        }
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-                      >
-                        ✏ Edit
-                      </button>
+                      <td className="p-3 text-sm font-medium">
+                        {s.fullName}
+                      </td>
 
-                      <button
-                        onClick={() => handleDelete(s._id)}
-                        className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                      >
-                        🗑 Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      <td className="p-3 text-sm">{s.email}</td>
+
+                      <td className="p-3 text-sm">{s.course}</td>
+
+                      <td className="p-3 text-sm font-semibold text-gray-800">
+                        ₹ {fees.totalFees}
+                      </td>
+
+                      <td className="p-3 text-sm text-green-600 font-semibold">
+                        ₹ {fees.paidFees}
+                      </td>
+
+                      <td className="p-3 text-sm text-red-600 font-semibold">
+                        ₹ {fees.remainingFees}
+                      </td>
+
+                      <td className="p-3 text-sm text-gray-500">
+                        {s.createdAt
+                          ? new Date(s.createdAt).toLocaleString()
+                          : "N/A"}
+                      </td>
+
+                      <td className="p-3 flex justify-center gap-2">
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/admindashboard/editstudent/${s._id}`
+                            )
+                          }
+                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-md text-sm font-medium"
+                        >
+                          ✏ Edit
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(s._id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-md text-sm font-medium"
+                        >
+                          🗑 Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -181,41 +240,38 @@ export default function ManageStudents() {
 
         {/* PAGINATION */}
         {totalPages > 1 && (
-          <div className="flex flex-wrap justify-center items-center gap-2 mt-6 p-2">
+          <div className="flex justify-center gap-2 mt-6">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(currentPage - 1)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base border border-gray-300 shadow-sm"
+              className="px-3 py-2 bg-gray-200 rounded disabled:opacity-50"
             >
               Prev
             </button>
 
-            <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`min-w-[32px] sm:min-w-[40px] px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-colors shadow-sm ${
-                    currentPage === i + 1
-                      ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-3 py-2 rounded ${
+                  currentPage === i + 1
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
 
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base border border-gray-300 shadow-sm"
+              className="px-3 py-2 bg-gray-200 rounded disabled:opacity-50"
             >
               Next
             </button>
           </div>
         )}
-
       </div>
     </div>
   );

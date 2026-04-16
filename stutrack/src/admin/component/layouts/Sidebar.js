@@ -23,9 +23,6 @@ const Sidebar = () => {
     /* COURSES MENU */
     { name: "Courses", path: "/admindashboard/courses", icon: <FaBook /> },
 
-    // ✅ NEW FEES MANAGEMENT
-    { name: "Fees Management", path: "/admindashboard/fees", icon: <FaMoneyBillWave /> },
-
     { name: "Leave Approvals", path: "/admindashboard/leave", icon: <FaEnvelope /> },
     { name: "Notifications", path: "/admindashboard/notifications", icon: <FaBell /> },
     { name: "Upload Marks", path: "/admindashboard/marks", icon: <FaClipboardList /> },

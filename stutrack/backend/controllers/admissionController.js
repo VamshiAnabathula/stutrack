@@ -70,7 +70,20 @@ export const getAdmissionByEmail = async (req, res) => {
 /* ================= CREATE ================= */
 export const createAdmission = async (req, res) => {
   try {
-    const student = new Admission(req.body);
+    const data = req.body;
+
+    const totalFees = Number(data.totalFees || 0);
+    const paidFees = Number(data.paidFees || 0);
+
+    let remainingFees = totalFees - paidFees;
+    if (remainingFees < 0) remainingFees = 0;
+
+    const student = new Admission({
+      ...data,
+      totalFees,
+      paidFees,
+      remainingFees,
+    });
 
     await student.save();
 
@@ -90,9 +103,22 @@ export const createAdmission = async (req, res) => {
 /* ================= UPDATE ================= */
 export const updateAdmission = async (req, res) => {
   try {
+    const data = req.body;
+
+    const totalFees = Number(data.totalFees || 0);
+    const paidFees = Number(data.paidFees || 0);
+
+    let remainingFees = totalFees - paidFees;
+    if (remainingFees < 0) remainingFees = 0;
+
     const updated = await Admission.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      {
+        ...data,
+        totalFees,
+        paidFees,
+        remainingFees,
+      },
       { new: true }
     );
 
@@ -126,12 +152,11 @@ export const deleteAdmission = async (req, res) => {
   }
 };
 
-/* ================= UPDATE PHOTO (NEW 🔥) ================= */
+/* ================= UPDATE PHOTO ================= */
 export const updateStudentPhoto = async (req, res) => {
   try {
     const { email } = req.params;
 
-    // file check
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -139,10 +164,8 @@ export const updateStudentPhoto = async (req, res) => {
       });
     }
 
-    // image url
     const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
 
-    // update student
     const student = await Admission.findOneAndUpdate(
       { email },
       { photo: imageUrl },
