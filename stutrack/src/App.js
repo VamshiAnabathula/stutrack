@@ -21,6 +21,8 @@ import CoursesPage from "./admin/component/CoursesPage";
 import AdminAttendance from "./component/AdminAttendance";
 import EditStudent from "./admin/component/EditStudent";
 
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -36,9 +38,10 @@ function App() {
         {/* ================= STUDENT DASHBOARD ================= */}
         <Route path="/studentdashboard/*" element={<StudentDashboard />} />
 
-        {/* ================= ADMIN ================= */}
+        {/* ================= ADMIN LOGIN ================= */}
         <Route path="/adminlogin" element={<AdminLogin />} />
 
+        {/* ================= ADMIN DASHBOARD ================= */}
         <Route path="/admindashboard" element={<AdminLayout />}>
 
           <Route index element={<DashboardCards />} />
@@ -46,6 +49,9 @@ function App() {
           <Route path="students" element={<ManageStudents />} />
 
           <Route path="courses" element={<CoursesPage />} />
+
+          {/* ✅ FEES MANAGEMENT */}
+      
 
           <Route path="leave" element={<LeaveApprovals />} />
 

@@ -7,7 +7,8 @@ import {
   FaClipboardList,
   FaSignOutAlt,
   FaClock,
-  FaBook
+  FaBook,
+  FaMoneyBillWave   // ✅ NEW ICON
 } from "react-icons/fa";
 import { useState } from "react";
 
@@ -21,6 +22,9 @@ const Sidebar = () => {
 
     /* COURSES MENU */
     { name: "Courses", path: "/admindashboard/courses", icon: <FaBook /> },
+
+    // ✅ NEW FEES MANAGEMENT
+    { name: "Fees Management", path: "/admindashboard/fees", icon: <FaMoneyBillWave /> },
 
     { name: "Leave Approvals", path: "/admindashboard/leave", icon: <FaEnvelope /> },
     { name: "Notifications", path: "/admindashboard/notifications", icon: <FaBell /> },

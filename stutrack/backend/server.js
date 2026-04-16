@@ -16,12 +16,11 @@ import authRoutes from "./routes/authRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
-import uploadRoutes from "./routes/uploadRoutes.js"; // ✅ PHOTO UPLOAD
+import uploadRoutes from "./routes/uploadRoutes.js";
+
 
 // ================= INITIALIZE APP =================
 const app = express();
-
-// ================= PORT =================
 const PORT = process.env.PORT || 5000;
 
 // ================= CONNECT DATABASE =================
@@ -38,7 +37,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ================= STATIC FOLDER =================
+// ================= STATIC FILES =================
 app.use("/uploads", express.static("uploads"));
 
 // ================= API ROUTES =================
@@ -48,15 +47,15 @@ app.use("/api/leave", leaveRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/courses", courseRoutes);
-
-// ✅ PHOTO UPLOAD ROUTE
 app.use("/api/upload", uploadRoutes);
+
+
 
 // ================= TEST ROUTE =================
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "🚀 Stutrack API is running...",
+    message: "🚀 Stutrack API running...",
   });
 });
 

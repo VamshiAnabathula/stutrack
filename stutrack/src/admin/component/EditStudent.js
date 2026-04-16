@@ -17,6 +17,7 @@ export default function EditStudent() {
     duration: "",
     reference: "",
     profileImage: "",
+    bloodGroup: "", // ✅ ADDED
   });
 
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,6 @@ export default function EditStudent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Extra manual validation
     if (!/^\d{10}$/.test(formData.mobile)) {
       alert("Mobile number must be exactly 10 digits.");
       return;
@@ -89,28 +89,32 @@ export default function EditStudent() {
           <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Edit Student Profile</h2>
-              <p className="mt-1 text-indigo-100 text-sm font-medium">Update details for {formData.fullName}</p>
+              <p className="mt-1 text-indigo-100 text-sm font-medium">
+                Update details for {formData.fullName}
+              </p>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 sm:p-8">
           
+          {/* ================= PERSONAL ================= */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-3">
               <span className="w-1.5 h-5 bg-blue-500 rounded-full inline-block"></span>
               Personal & Contact Information
             </h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               
-              {/* FULL NAME (Editable) */}
+              {/* FULL NAME */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Full Name 
+                  Full Name
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                     <span className="text-gray-400 text-sm">👤</span>
+                    <span className="text-gray-400 text-sm">👤</span>
                   </div>
                   <input
                     type="text"
@@ -123,12 +127,14 @@ export default function EditStudent() {
                 </div>
               </div>
 
-               {/* MOBILE (Editable + 10 digits) */}
+              {/* MOBILE */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700">Mobile Number (10 Digits)</label>
+                <label className="text-xs font-bold text-gray-700">
+                  Mobile Number (10 Digits)
+                </label>
                 <div className="relative">
-                   <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                     <span className="text-gray-400 text-sm">📞</span>
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                    <span className="text-gray-400 text-sm">📞</span>
                   </div>
                   <input
                     type="tel"
@@ -143,107 +149,129 @@ export default function EditStudent() {
                 </div>
               </div>
 
-              {/* DOB (Locked) */}
+              {/* ✅ BLOOD GROUP */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Date of Birth
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">Locked</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    name="dob"
-                    value={formData.dob}
-                    disabled
-                    className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500 text-sm font-medium cursor-not-allowed shadow-inner focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* EMAIL (Locked) */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700 flex justify-between">
-                  Email Address
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">Locked</span>
+                <label className="text-xs font-bold text-gray-700">
+                  Blood Group
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                     <span className="text-gray-400 text-sm">✉️</span>
+                    <span className="text-gray-400 text-sm">🩸</span>
                   </div>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    disabled
-                    className="w-full pl-8 border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500 text-sm font-medium cursor-not-allowed shadow-inner focus:outline-none"
-                  />
+                  <select
+                    name="bloodGroup"
+                    value={formData.bloodGroup}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-8 border border-gray-300 p-2.5 rounded-lg bg-white text-gray-800 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm appearance-none"
+                  >
+                    <option value="" disabled>Select Blood Group</option>
+                    <option>A+</option>
+                    <option>A-</option>
+                    <option>B+</option>
+                    <option>B-</option>
+                    <option>AB+</option>
+                    <option>AB-</option>
+                    <option>O+</option>
+                    <option>O-</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 text-xs">
+                    ▼
+                  </div>
                 </div>
               </div>
 
+              {/* DOB */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-700 flex justify-between">
+                  Date of Birth
+                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
+                    Locked
+                  </span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.dob}
+                  disabled
+                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                />
+              </div>
+
+              {/* EMAIL */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-700 flex justify-between">
+                  Email Address
+                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
+                    Locked
+                  </span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  disabled
+                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                />
+              </div>
             </div>
           </div>
 
+          {/* ================= ACADEMIC ================= */}
           <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-3">
               <span className="w-1.5 h-5 bg-indigo-500 rounded-full inline-block"></span>
               Academic Details
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {/* COURSE (Locked) */}
+              
+              {/* COURSE */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-700 flex justify-between">
                   Course Enrolled
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">Locked</span>
+                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
+                    Locked
+                  </span>
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                     <span className="text-gray-400 text-sm">📚</span>
-                  </div>
-                  <input
-                    type="text"
-                    name="course"
-                    value={formData.course}
-                    disabled
-                    className="w-full pl-8 border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500 text-sm font-medium cursor-not-allowed shadow-inner focus:outline-none"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={formData.course}
+                  disabled
+                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                />
               </div>
 
-              {/* DURATION (Locked) */}
+              {/* DURATION */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-700 flex justify-between">
                   Course Duration
-                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">Locked</span>
+                  <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
+                    Locked
+                  </span>
                 </label>
-                <div className="relative">
-                   <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                     <span className="text-gray-400 text-sm">⏳</span>
-                  </div>
-                  <input
-                    type="text"
-                    name="duration"
-                    value={formData.duration?.replace("-", " ") || ""}
-                    disabled
-                    className="w-full pl-8 border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500 text-sm font-medium cursor-not-allowed shadow-inner focus:outline-none capitalize"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={formData.duration}
+                  disabled
+                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-gray-500"
+                />
               </div>
+
             </div>
           </div>
 
-          {/* ACTION BUTTONS */}
+          {/* BUTTONS */}
           <div className="mt-8 pt-5 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3">
             <button
               type="button"
               onClick={() => navigate("/admindashboard/students")}
-              className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition-all duration-200"
+              className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg"
             >
               Cancel Edit
             </button>
+
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 transform"
+              className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold rounded-lg shadow-md"
             >
               Save Changes
             </button>

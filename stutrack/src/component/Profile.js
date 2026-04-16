@@ -9,6 +9,7 @@ import {
   Clock,
   CalendarDays,
   Camera,
+  Droplet, // ✅ NEW ICON
 } from "lucide-react";
 
 export default function Profile({ studentEmail }) {
@@ -167,6 +168,9 @@ export default function Profile({ studentEmail }) {
             <ProfileItem icon={<BookOpen />} label="Course Enrolled" value={student.course} />
             <ProfileItem icon={<Clock />} label="Course Duration" value={student.duration} />
             <ProfileItem icon={<CalendarDays />} label="Joining Date" value={joiningDate} />
+
+            {/* ✅ NEW BLOOD GROUP */}
+            <ProfileItem icon={<Droplet />} label="Blood Group" value={student.bloodGroup} />
 
           </div>
         </div>

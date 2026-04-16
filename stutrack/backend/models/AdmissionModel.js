@@ -18,51 +18,28 @@ const admissionSchema = new mongoose.Schema(
       required: true,
     },
 
-    college: {
+    college: String,
+    course: String,
+    duration: String,
+    address: String,
+
+    // ✅ BLOOD GROUP
+    bloodGroup: {
       type: String,
     },
 
-    course: {
-      type: String,
-    },
-
-    duration: {
-      type: String,
-    },
-
-    address: {
-      type: String,
-    },
-
-    // ✅ PHOTO FIELD
     photo: {
       type: String,
       default: "",
     },
 
-    dob: {
-      type: String,
-    },
+    dob: String,
+    marks: String,
+    passingYear: String,
+    fees: String,
 
-    marks: {
-      type: String,
-    },
-
-    passingYear: {
-      type: String,
-    },
-
-    fees: {
-      type: String,
-    },
-
-    otp: {
-      type: String,
-    },
-
-    otpExpiry: {
-      type: Date,
-    },
+    otp: String,
+    otpExpiry: Date,
   },
   { timestamps: true }
 );
