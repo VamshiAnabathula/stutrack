@@ -5,7 +5,7 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 
-// ROUTES
+/* ROUTES */
 import admissionRoutes from "./routes/admissionRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
@@ -18,7 +18,7 @@ import feesRoutes from "./routes/feesRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-/* ================= CONNECT DATABASE ================= */
+/* ================= DB ================= */
 connectDB();
 
 /* ================= MIDDLEWARE ================= */
@@ -29,13 +29,14 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "10mb" }));
+/* ================= PARSING ================= */
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* ================= STATIC FILES ================= */
+/* ================= STATIC ================= */
 app.use("/uploads", express.static("uploads"));
 
-/* ================= API ROUTES ================= */
+/* ================= ROUTES ================= */
 app.use("/api/admissions", admissionRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/leave", leaveRoutes);
@@ -45,33 +46,33 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/fees", feesRoutes);
 
-/* ================= HEALTH CHECK ================= */
+/* ================= ROOT ================= */
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "🚀 Stutrack API running...",
+    message: "Server running 🚀",
   });
 });
 
-/* ================= 404 HANDLER ================= */
+/* ================= 404 ================= */
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "Route Not Found ❌",
+    message: "API Not Found ❌",
   });
 });
 
-/* ================= GLOBAL ERROR HANDLER ================= */
+/* ================= ERROR HANDLER ================= */
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err);
+  console.error("❌ GLOBAL ERROR:", err);
 
   res.status(500).json({
     success: false,
-    message: "Internal Server Error",
+    message: err.message || "Server Error",
   });
 });
 
-/* ================= START SERVER ================= */
+/* ================= START ================= */
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

@@ -172,12 +172,26 @@ export default function Profile() {
 
           </div>
 
-          {/* ================= FEES SECTION (DISABLED INPUT STYLE) ================= */}
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* 🔥 FEES SECTION (SAME CARD STYLE) */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-            <DisabledInput label="Total Fees" value={fees?.totalFees ?? 0} />
-            <DisabledInput label="Paid Fees" value={fees?.paidFees ?? 0} />
-            <DisabledInput label="Remaining Fees" value={fees?.remainingFees ?? 0} />
+            <ProfileItem
+              icon={<IndianRupee />}
+              label="Total Fees"
+              value={fees?.totalFees ?? 0}
+            />
+
+            <ProfileItem
+              icon={<IndianRupee className="text-green-600" />}
+              label="Paid Fees"
+              value={fees?.paidFees ?? 0}
+            />
+
+            <ProfileItem
+              icon={<IndianRupee className="text-red-500" />}
+              label="Remaining Fees"
+              value={fees?.remainingFees ?? 0}
+            />
 
           </div>
 
@@ -196,26 +210,12 @@ export default function Profile() {
 /* ================= PROFILE CARD ================= */
 function ProfileItem({ icon, label, value }) {
   return (
-    <div className="bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
+    <div className="bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition">
       <div className="text-indigo-600">{icon}</div>
       <div>
         <p className="text-xs text-gray-400 uppercase">{label}</p>
         <p className="text-sm font-bold text-gray-800">{value || "-"}</p>
       </div>
-    </div>
-  );
-}
-
-/* ================= DISABLED INPUT STYLE ================= */
-function DisabledInput({ label, value }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-bold text-gray-600">{label}</label>
-      <input
-        value={value}
-        disabled
-        className="border bg-gray-100 p-2 rounded-lg font-bold text-gray-700"
-      />
     </div>
   );
 }

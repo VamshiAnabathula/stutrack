@@ -1,64 +1,8 @@
 import Fees from "../models/FeesModel.js";
+import Admission from "../models/AdmissionModel.js";
 import mongoose from "mongoose";
 
-/* ================= CREATE OR UPDATE FEES ================= */
-export const createOrUpdateFees = async (req, res) => {
-  try {
-    const { studentId, totalFees, paidFees } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(studentId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid student ID",
-      });
-    }
-
-    let fees = await Fees.findOne({ studentId });
-
-    const total = Number(totalFees || 0);
-    const paid = Number(paidFees || 0);
-
-    let remaining = total - paid;
-    if (remaining < 0) remaining = 0;
-
-    // If exists → update
-    if (fees) {
-      fees.totalFees = total;
-      fees.paidFees = paid;
-      fees.remainingFees = remaining;
-
-      await fees.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "Fees updated successfully",
-        fees,
-      });
-    }
-
-    // If not exists → create
-    const newFees = await Fees.create({
-      studentId,
-      totalFees: total,
-      paidFees: paid,
-      remainingFees: remaining,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Fees created successfully",
-      fees: newFees,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-};
-
-/* ================= GET FEES BY STUDENT ID ================= */
+/* ================= GET FEES ================= */
 export const getFeesByStudentId = async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -72,43 +16,80 @@ export const getFeesByStudentId = async (req, res) => {
 
     let fees = await Fees.findOne({ studentId });
 
-    // Auto create if not exists (safe fallback)
+    // auto create
     if (!fees) {
       fees = await Fees.create({
         studentId,
-        totalFees: 0,
+        totalFees: 20000,
         paidFees: 0,
-        remainingFees: 0,
+        remainingFees: 20000,
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      fees,
-    });
+    res.json({ success: true, fees });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    res.status(500).json({ success: false });
   }
 };
 
-/* ================= DELETE FEES ================= */
-export const deleteFeesByStudentId = async (req, res) => {
+/* ================= PAY FEES (SYNC FIXED) ================= */
+export const payFees = async (req, res) => {
   try {
     const { studentId } = req.params;
+    const { amount } = req.body;
 
-    await Fees.findOneAndDelete({ studentId });
+    let fees = await Fees.findOne({ studentId });
 
-    return res.status(200).json({
+    if (!fees) {
+      return res.status(404).json({
+        success: false,
+        message: "Fees not found",
+      });
+    }
+
+    const payAmount = Number(amount);
+
+    if (!payAmount || payAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid amount",
+      });
+    }
+
+    if (fees.paidFees + payAmount > fees.totalFees) {
+      return res.status(400).json({
+        success: false,
+        message: "Amount exceeds total fees",
+      });
+    }
+
+    /* ================= UPDATE FEES ================= */
+    fees.paidFees += payAmount;
+    fees.remainingFees = fees.totalFees - fees.paidFees;
+
+    await fees.save();
+
+    /* ================= SYNC WITH ADMISSION ================= */
+    await Admission.findByIdAndUpdate(
+      studentId,
+      {
+        paidFees: fees.paidFees,
+        remainingFees: fees.remainingFees,
+        totalFees: fees.totalFees,
+      },
+      { new: true }
+    );
+
+    res.json({
       success: true,
-      message: "Fees deleted successfully",
+      message: "Payment successful & synced with Admission",
+      fees,
     });
+
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({
+    console.log("PAY ERROR:", error);
+    res.status(500).json({
       success: false,
       message: "Server error",
     });

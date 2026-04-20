@@ -16,58 +16,51 @@ import Notifications from "./admin/component/Notifications";
 import UploadMarks from "./admin/component/UploadMarks";
 import AddStudent from "./admin/component/addstudent";
 import CoursesPage from "./admin/component/CoursesPage";
-
-/* ================= NEW PAGE ================= */
-import AdminAttendance from "./component/AdminAttendance";
 import EditStudent from "./admin/component/EditStudent";
 
+/* ================= OTHER ================= */
+import AdminAttendance from "./component/AdminAttendance";
 
+/* ================= ✅ FEES PAGE ================= */
+import Fees from "./admin/component/Fees.js"; // ✅ added .js (important fix)
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* ================= DEFAULT ================= */}
+        {/* DEFAULT */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* ================= STUDENT ================= */}
+        {/* STUDENT */}
         <Route path="/login" element={<Login />} />
         <Route path="/student-register" element={<AdmissionForm />} />
-
-        {/* ================= STUDENT DASHBOARD ================= */}
         <Route path="/studentdashboard/*" element={<StudentDashboard />} />
 
-        {/* ================= ADMIN LOGIN ================= */}
+        {/* ADMIN LOGIN */}
         <Route path="/adminlogin" element={<AdminLogin />} />
 
-        {/* ================= ADMIN DASHBOARD ================= */}
+        {/* ADMIN DASHBOARD */}
         <Route path="/admindashboard" element={<AdminLayout />}>
 
           <Route index element={<DashboardCards />} />
-
           <Route path="students" element={<ManageStudents />} />
-
           <Route path="courses" element={<CoursesPage />} />
 
-          {/* ✅ FEES MANAGEMENT */}
-      
+          {/* ✅ FEES */}
+          <Route path="fees" element={<Fees />} />
 
+          {/* OTHER */}
           <Route path="leave" element={<LeaveApprovals />} />
-
           <Route path="notifications" element={<Notifications />} />
-
           <Route path="marks" element={<UploadMarks />} />
-
           <Route path="addstudent" element={<AddStudent />} />
-
           <Route path="editstudent/:id" element={<EditStudent />} />
-
           <Route path="attendance" element={<AdminAttendance />} />
 
         </Route>
 
-        {/* ================= 404 ================= */}
+        {/* 404 */}
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
 
       </Routes>

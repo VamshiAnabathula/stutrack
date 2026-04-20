@@ -1,4 +1,5 @@
 import Admission from "../models/AdmissionModel.js";
+import Fees from "../models/FeesModel.js";
 
 /* ================= GET ALL ================= */
 export const getAdmissions = async (req, res) => {
@@ -87,9 +88,17 @@ export const createAdmission = async (req, res) => {
 
     await student.save();
 
+    /* ================= CREATE FEES ENTRY ================= */
+    await Fees.create({
+      studentId: student._id,
+      totalFees,
+      paidFees,
+      remainingFees,
+    });
+
     res.json({
       success: true,
-      message: "Student admission created",
+      message: "Student admission created & synced with Fees",
       data: student,
     });
   } catch (error) {
@@ -100,7 +109,7 @@ export const createAdmission = async (req, res) => {
   }
 };
 
-/* ================= UPDATE ================= */
+/* ================= UPDATE (SYNC FIXED) ================= */
 export const updateAdmission = async (req, res) => {
   try {
     const data = req.body;
@@ -122,9 +131,22 @@ export const updateAdmission = async (req, res) => {
       { new: true }
     );
 
+    if (updated) {
+      /* ================= SYNC WITH FEES ================= */
+      await Fees.findOneAndUpdate(
+        { studentId: req.params.id },
+        {
+          totalFees,
+          paidFees,
+          remainingFees,
+        },
+        { new: true }
+      );
+    }
+
     res.json({
       success: true,
-      message: "Student updated",
+      message: "Student updated & synced with Fees",
       data: updated,
     });
   } catch (error) {
@@ -140,9 +162,12 @@ export const deleteAdmission = async (req, res) => {
   try {
     await Admission.findByIdAndDelete(req.params.id);
 
+    /* ================= DELETE FEES ALSO ================= */
+    await Fees.findOneAndDelete({ studentId: req.params.id });
+
     res.json({
       success: true,
-      message: "Student deleted successfully",
+      message: "Student deleted successfully (with Fees)",
     });
   } catch (error) {
     res.status(500).json({

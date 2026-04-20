@@ -31,7 +31,7 @@ const AddStudent = () => {
     const fetchCourses = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/courses");
-        const courseData = res.data.data || res.data;
+        const courseData = res.data.data || res.data || [];
         setCourses(courseData);
       } catch (error) {
         console.log("Error loading courses", error);
@@ -52,11 +52,11 @@ const AddStudent = () => {
 
       const total = Number(selectedCourse?.fees || 0);
 
-      setStudent({
-        ...student,
+      setStudent((prev) => ({
+        ...prev,
         course: value,
         duration: selectedCourse?.duration || "",
-      });
+      }));
 
       setFees({
         totalAmount: total,
@@ -71,17 +71,17 @@ const AddStudent = () => {
       let remaining = total - paid;
       if (remaining < 0) remaining = 0;
 
-      setFees({
-        ...fees,
+      setFees((prev) => ({
+        ...prev,
         feesPaid: paid,
         remainingFees: remaining,
-      });
+      }));
     } 
     else {
-      setStudent({
-        ...student,
+      setStudent((prev) => ({
+        ...prev,
         [name]: value,
-      });
+      }));
     }
   };
 
@@ -95,7 +95,7 @@ const AddStudent = () => {
     }
 
     try {
-      // 1. Create Student (WITH FEES FIX)
+      /* STEP 1: CREATE STUDENT */
       const res = await axios.post(
         "http://localhost:5000/api/admissions",
         {
@@ -105,14 +105,23 @@ const AddStudent = () => {
         }
       );
 
-      const studentId = res.data.data._id;
+      const studentId = res.data?.data?._id;
 
-      // 2. Create Fees separately (backup table)
-      await axios.post("http://localhost:5000/api/fees", {
-        studentId,
-        totalFees: fees.totalAmount,
-        paidFees: fees.feesPaid,
-      });
+      if (!studentId) {
+        throw new Error("Student ID not returned from server");
+      }
+
+      /* STEP 2: CREATE FEES (SAFE CALL) */
+      try {
+        await axios.post("http://localhost:5000/api/fees", {
+          studentId,
+          totalFees: fees.totalAmount,
+          paidFees: fees.feesPaid,
+        });
+      } catch (feeError) {
+        console.log("Fees API error (ignored):", feeError.response?.data || feeError.message);
+        // ❗ IMPORTANT: student create ho chuka hai, isliye stop nahi karenge
+      }
 
       alert("Student Added Successfully ✅");
       navigate("/admindashboard/students");

@@ -28,7 +28,6 @@ export default function EditStudent() {
 
   const [loading, setLoading] = useState(true);
 
-  /* ================= FETCH STUDENT DATA ================= */
   useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -53,7 +52,6 @@ export default function EditStudent() {
             bloodGroup: data.bloodGroup || "",
           });
 
-          // FETCH FEES FROM SEPARATE COLLECTION
           try {
             const feeRes = await axios.get(
               `http://localhost:5000/api/fees/${id}`
@@ -88,7 +86,6 @@ export default function EditStudent() {
     fetchStudent();
   }, [id, navigate]);
 
-  /* ================= HANDLE CHANGE ================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -112,7 +109,6 @@ export default function EditStudent() {
     }
   };
 
-  /* ================= HANDLE SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -122,17 +118,14 @@ export default function EditStudent() {
     }
 
     try {
-      // UPDATE STUDENT
       const res = await axios.put(
         `http://localhost:5000/api/admissions/${id}`,
-        formData
+        {
+          ...formData,
+          totalFees: fees.totalFees,
+          paidFees: fees.paidFees,
+        }
       );
-
-      // UPDATE FEES SEPARATELY
-      await axios.put(`http://localhost:5000/api/fees/${id}`, {
-        totalFees: fees.totalFees,
-        paidFees: fees.paidFees,
-      });
 
       if (res.data.success) {
         alert("Student details updated successfully ✅");
@@ -158,18 +151,16 @@ export default function EditStudent() {
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex items-start justify-center">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg overflow-hidden mt-2 sm:mt-4 border border-gray-100">
 
-        {/* HEADER SECTION */}
+        {/* HEADER */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 sm:p-6 text-white relative">
           <div className="absolute inset-0 bg-black opacity-10"></div>
-          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Edit Student Profile
-              </h2>
-              <p className="mt-1 text-indigo-100 text-sm font-medium">
-                Update details for {formData.fullName}
-              </p>
-            </div>
+          <div className="relative z-10">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Edit Student Profile
+            </h2>
+            <p className="mt-1 text-indigo-100 text-sm font-medium">
+              Update details for {formData.fullName}
+            </p>
           </div>
         </div>
 
@@ -177,42 +168,41 @@ export default function EditStudent() {
 
           {/* PERSONAL */}
           <div className="mb-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-3">
-              <span className="w-1.5 h-5 bg-blue-500 rounded-full inline-block"></span>
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-3">
               Personal & Contact Information
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 
-              <div className="flex flex-col gap-1.5">
+              <div>
                 <label className="text-xs font-bold text-gray-700">Full Name</label>
                 <input
                   type="text"
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg"
+                  className="w-full border p-2.5 rounded-lg"
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div>
                 <label className="text-xs font-bold text-gray-700">Mobile Number</label>
                 <input
                   type="tel"
                   name="mobile"
                   value={formData.mobile}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg"
+                  className="w-full border p-2.5 rounded-lg"
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div>
                 <label className="text-xs font-bold text-gray-700">Blood Group</label>
                 <select
                   name="bloodGroup"
                   value={formData.bloodGroup}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg"
+                  className="w-full border p-2.5 rounded-lg"
                 >
                   <option value="">Select Blood Group</option>
                   <option>A+</option>
@@ -226,23 +216,23 @@ export default function EditStudent() {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div>
                 <label className="text-xs font-bold text-gray-700">Date of Birth</label>
                 <input
                   type="date"
                   value={formData.dob}
                   disabled
-                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
+                  className="w-full border p-2.5 rounded-lg bg-gray-50"
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div>
                 <label className="text-xs font-bold text-gray-700">Email Address</label>
                 <input
                   type="email"
                   value={formData.email}
                   disabled
-                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
+                  className="w-full border p-2.5 rounded-lg bg-gray-50"
                 />
               </div>
 
@@ -251,65 +241,49 @@ export default function EditStudent() {
 
           {/* ACADEMIC + FEES */}
           <div className="mb-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-3">
-              <span className="w-1.5 h-5 bg-indigo-500 rounded-full inline-block"></span>
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-3">
               Academic Details
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* ROW 1: COURSE + DURATION */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 
               <input
                 type="text"
                 value={formData.course}
                 disabled
-                className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
+                className="w-full border p-2.5 rounded-lg bg-gray-50"
               />
 
               <input
                 type="text"
                 value={formData.duration}
                 disabled
-                className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
+                className="w-full border p-2.5 rounded-lg bg-gray-50"
               />
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700">
-                  Total Fees (₹)
-                </label>
-                <input
-                  type="number"
-                  value={fees.totalFees}
-                  disabled
-                  className="w-full border border-gray-200 p-2.5 rounded-lg bg-gray-50"
-                />
+            </div>
+
+            {/* ROW 2: FEES (3 IN ONE ROW) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              <div className="border p-3 rounded-lg bg-gray-50">
+                <label className="text-xs font-bold text-gray-700">Total Fees (₹)</label>
+                <div className="mt-1 font-semibold text-sm">{fees.totalFees}</div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700">
-                  Fees Paid (₹)
-                </label>
-                <input
-                  type="number"
-                  name="paidFees"
-                  value={fees.paidFees}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg"
-                />
+              <div className="border p-3 rounded-lg bg-gray-50">
+                <label className="text-xs font-bold text-gray-700">Fees Paid (₹)</label>
+                <div className="mt-1 font-semibold text-sm">{fees.paidFees}</div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-700">
-                  Remaining Fees (₹)
-                </label>
-                <input
-                  type="number"
-                  value={fees.remainingFees}
-                  readOnly
-                  className="w-full border border-gray-300 p-2.5 rounded-lg bg-gray-100"
-                />
+              <div className="border p-3 rounded-lg bg-gray-100">
+                <label className="text-xs font-bold text-gray-700">Remaining Fees (₹)</label>
+                <div className="mt-1 font-semibold text-sm">{fees.remainingFees}</div>
               </div>
 
             </div>
+
           </div>
 
           {/* BUTTONS */}

@@ -8,15 +8,17 @@ const feesSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+
     totalFees: {
       type: Number,
-      default: 50000,
-      required: true,
+      default: 20000,
     },
+
     paidFees: {
       type: Number,
       default: 0,
     },
+
     remainingFees: {
       type: Number,
       default: 0,
@@ -25,14 +27,14 @@ const feesSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/* ================= AUTO CALCULATE REMAINING FEES ================= */
+/* ================= AUTO CALCULATION ================= */
 feesSchema.pre("save", function () {
-  this.remainingFees =
-    Number(this.totalFees || 0) - Number(this.paidFees || 0);
+  this.totalFees = Number(this.totalFees || 0);
+  this.paidFees = Number(this.paidFees || 0);
 
-  if (this.remainingFees < 0) {
-    this.remainingFees = 0;
-  }
+  this.remainingFees = this.totalFees - this.paidFees;
+
+  if (this.remainingFees < 0) this.remainingFees = 0;
 });
 
 export default mongoose.model("Fees", feesSchema);
